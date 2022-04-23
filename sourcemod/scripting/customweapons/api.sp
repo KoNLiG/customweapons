@@ -7,15 +7,26 @@
 #error "Attemped to compile from the wrong file"
 #endif
 
-#define VALIDATE_CUSTOM_WEAPON(%1) if (EntRefToEntIndex(view_as<int>(%1)) == INVALID_ENT_REFERENCE) ThrowError("Invalid CustomWeapon")
+int ValidateCustomWeapon(CustomWeapon custom_weapon)
+{
+	int entity = EntRefToEntIndex(view_as<int>(custom_weapon));
+	
+	if (entity == INVALID_ENT_REFERENCE)
+	{
+		ThrowError("Invalid CustomWeapon");
+	}
+	
+	return entity;
+}
 
-// Global forward handles.
-// GlobalForward g_OnConfigLoaded;
+// Forward handles.
+PrivateForward g_ModelHook;
+PrivateForward g_SoundHook;
 
 void InitializeAPI()
 {
 	CreateNatives();
-	// CreateForwards();
+	CreateForwards();
 	
 	RegPluginLibrary("customweapons");
 }
@@ -26,10 +37,26 @@ void CreateNatives()
 	// CustomWeapon(int entity)
 	CreateNative("CustomWeapon.CustomWeapon", Native_CustomWeapon);
 	
+	// property int EntityIndex
 	CreateNative("CustomWeapon.EntityIndex.get", Native_GetEntityIndex);
 	
 	// void SetModel(CustomWeapon_ModelType model_type, const char[] source)
 	CreateNative("CustomWeapon.SetModel", Native_SetModel);
+	
+	// int GetModel(CustomWeapon_ModelType model_type, char[] buffer, int maxlength)
+	CreateNative("CustomWeapon.GetModel", Native_GetModel);
+	
+	// void SetShootSound(const char source[PLATFORM_MAX_PATH])
+	CreateNative("CustomWeapon.SetShootSound", Native_SetShootSound);
+	
+	// int GetShootSound(char[] buffer, int maxlength)
+	CreateNative("CustomWeapon.GetShootSound", Native_GetShootSound);
+	
+	// void AddModelHook(ModelHookCallback callback)
+	CreateNative("CustomWeapon.AddModelHook", Native_AddModelHook);
+	
+	// void RemoveModelHook(ModelHookCallback callback)
+	CreateNative("CustomWeapon.RemoveModelHook", Native_RemoveModelHook);
 }
 
 any Native_CustomWeapon(Handle plugin, int numParams)
@@ -79,7 +106,7 @@ any Native_SetModel(Handle plugin, int numParams)
 	// Param 1: 'CustomWeapon' [this]
 	CustomWeapon custom_weapon = GetNativeCell(1);
 	
-	VALIDATE_CUSTOM_WEAPON(custom_weapon);
+	int entity = ValidateCustomWeapon(custom_weapon);
 	
 	// Param 2: 'model_type'
 	CustomWeapon_ModelType model_type = GetNativeCell(2);
@@ -88,36 +115,180 @@ any Native_SetModel(Handle plugin, int numParams)
 	char source[PLATFORM_MAX_PATH];
 	
 	// Check for any errors.
-	Native_CheckStringParamLength(3, "model file path", sizeof(source));
+	Native_CheckStringParamLength(3, "model file path", sizeof(source), true);
 	
 	GetNativeString(3, source, sizeof(source));
 	
-	int model_index = GetModelPrecacheIndex(source);
-	if (model_index == INVALID_STRING_INDEX)
+	int precache_index = GetModelPrecacheIndex(source);
+	if (precache_index == INVALID_STRING_INDEX && model_type != CustomWeaponModel_Dropped)
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "Custom model is not precached (%s)", source);
+	}
+	
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
 	}
 	
 	switch (model_type)
 	{
 		case CustomWeaponModel_View:
 		{
+			custom_weapon_data.view_model = source;
 			
+			ReEquipWeaponEntity(entity);
 		}
 		case CustomWeaponModel_World:
 		{
-			
+			custom_weapon_data.world_model = source;
 		}
 		case CustomWeaponModel_Dropped:
 		{
-			
+			custom_weapon_data.dropped_model = source;
 		}
 		// Invalid model type, throw an expection.
 		default:
 		{
-			ThrowNativeError(SP_ERROR_NATIVE, "Invalid specified model type (%d)", model_type);
+			ThrowNativeError(SP_ERROR_NATIVE, "Invalid model type (%d)", model_type);
 		}
 	}
+	
+	custom_weapon_data.UpdateMyself(view_as<int>(custom_weapon));
+	
+	return 0;
+}
+
+any Native_GetModel(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+	
+	ValidateCustomWeapon(custom_weapon);
+	
+	// Param 2: 'model_type'
+	CustomWeapon_ModelType model_type = GetNativeCell(2);
+	
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		return 0;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+	
+	int maxlength = GetNativeCell(4);
+	
+	switch (model_type)
+	{
+		case CustomWeaponModel_View:
+		{
+			int num_bytes;
+			SetNativeString(3, custom_weapon_data.view_model, maxlength, .bytes = num_bytes);
+			
+			return num_bytes;
+		}
+		case CustomWeaponModel_World:
+		{
+			int num_bytes;
+			SetNativeString(3, custom_weapon_data.world_model, maxlength, .bytes = num_bytes);
+			
+			return num_bytes;
+		}
+		case CustomWeaponModel_Dropped:
+		{
+			int num_bytes;
+			SetNativeString(3, custom_weapon_data.dropped_model, maxlength, .bytes = num_bytes);
+			
+			return num_bytes;
+		}
+		// Invalid model type, throw an expection.
+		default:
+		{
+			ThrowNativeError(SP_ERROR_NATIVE, "Invalid model type (%d)", model_type);
+		}
+	}
+	
+	return 0;
+}
+
+any Native_SetShootSound(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+	
+	ValidateCustomWeapon(custom_weapon);
+	
+	// Param 2: 'source'
+	char source[PLATFORM_MAX_PATH];
+	
+	// Check for any errors.
+	Native_CheckStringParamLength(2, "shoot sound file path", sizeof(source), true);
+	
+	GetNativeString(2, source, sizeof(source));
+	
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+	
+	custom_weapon_data.shoot_sound = source;
+	
+	custom_weapon_data.UpdateMyself(view_as<int>(custom_weapon));
+	
+	return 0;
+}
+
+any Native_GetShootSound(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+	
+	ValidateCustomWeapon(custom_weapon);
+	
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		return 0;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+	
+	int num_bytes;
+	SetNativeString(2, custom_weapon_data.shoot_sound, GetNativeCell(3), .bytes = num_bytes);
+	
+	return num_bytes;
+}
+
+any Native_AddModelHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_ModelHook.AddFunction(plugin, GetNativeFunction(2));
+	
+	return 0;
+}
+
+any Native_RemoveModelHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_ModelHook.RemoveFunction(plugin, GetNativeFunction(2));
 	
 	return 0;
 }
@@ -140,4 +311,37 @@ void Native_CheckStringParamLength(int param_number, const char[] item_name, int
 	{
 		ThrowNativeError(SP_ERROR_NATIVE, "%s cannot be %d characters long (max: %d)", item_name, param_length, max_length - 1);
 	}
+}
+
+void CreateForwards()
+{
+	g_ModelHook = new PrivateForward(ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_String);
+	g_SoundHook = new PrivateForward(ET_Hook, Param_Cell, Param_Cell, Param_String);
+}
+
+Action Call_OnModel(int client, int weapon, CustomWeapon_ModelType model_type, char model[PLATFORM_MAX_PATH])
+{
+	Action result;
+	
+	Call_StartForward(g_ModelHook);
+	Call_PushCell(client);
+	Call_PushCell(weapon);
+	Call_PushCell(model_type);
+	Call_PushStringEx(model, sizeof(model), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_Finish(result);
+	
+	return result;
+}
+
+Action Call_OnSound(int client, int weapon, char sound[PLATFORM_MAX_PATH])
+{
+	Action result;
+	
+	Call_StartForward(g_SoundHook);
+	Call_PushCell(client);
+	Call_PushCell(weapon);
+	Call_PushStringEx(sound, sizeof(sound), SM_PARAM_STRING_UTF8 | SM_PARAM_STRING_COPY, SM_PARAM_COPYBACK);
+	Call_Finish(result);
+	
+	return result;
 } 

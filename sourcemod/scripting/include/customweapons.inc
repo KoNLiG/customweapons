@@ -11,6 +11,31 @@ enum CustomWeapon_ModelType
     CustomWeaponModel_Dropped	/* Ground model */
 }
 
+/**
+ * 	Called before a custom model is set on a weapon entity.
+ *	
+ *	@param client			Weapon owner client index. (0 if model_type == CustomWeaponModel_Dropped)
+ *	@param weapon			Weapon entity index.
+ *	@param model_type		Whether the model is view, world, dropped. See the enum above.
+ *  @param model			Model file path. Changeable.
+ *  
+ *  @return             	An Action value. Returning Plugin_Handled bypasses the game function call.
+ *                       	Returning Plugin_Stop bypasses the post hook as well as the game function.
+*/
+typedef ModelHookCallback = function Action (int client, int weapon, CustomWeapon_ModelType model_type, char model[PLATFORM_MAX_PATH]);
+
+/**
+ * 	Called before a custom weapon sound is emited.
+ *	
+ *	@param client			Weapon owner client index.
+ *	@param weapon			Weapon entity index.
+ *  @param model			Sound file path. Changeable.
+ *  
+ *  @return             	An Action value. Returning Plugin_Handled bypasses the game function call.
+ *                       	Returning Plugin_Stop bypasses the post hook as well as the game function.
+*/
+typedef SoundHookCallback = function Action (int client, int weapon, char sound[PLATFORM_MAX_PATH]);
+
 methodmap CustomWeapon
 {
 	// Constructor of CustomWeapon. Can be used to manipulate features of a weapon entity.
@@ -48,6 +73,51 @@ methodmap CustomWeapon
 	//
 	// @error				Invalid 'CustomWeapon', invalid model type, or the given model isn't precached.
 	public native void SetModel(CustomWeapon_ModelType model_type, const char source[PLATFORM_MAX_PATH]);
+	
+	// Retrieves the weapon model. (view, world, dropped)
+	//
+	// Note that this native will only return models that are customized.
+	// This will return a null terminated string if no custom model is set.
+	//
+	// @param model_type    Model type to apply the new model on. See the enum above.
+	// @param buffer        Destination string buffer.
+	// @param maxlength     Maximum length of output string buffer.
+	//
+	// @return              Number of cells written.
+	// @error				Invalid 'CustomWeapon' or invalid model type.
+	public native int GetModel(CustomWeapon_ModelType model_type, char[] buffer, int maxlength);
+	
+	// Customize the weapon shoot sound. (both client and server side)
+	//
+	// Note that the sound should be precached before using this function.
+	//
+	// @param source    	New weapon shoot sound file path.
+	//
+	// @error				Invalid 'CustomWeapon', or the given sound isn't precached.
+	public native void SetShootSound(const char source[PLATFORM_MAX_PATH]);
+	
+	// Retrieves the weapon shoot sound.
+	//
+	// The buffer will be a null terminated string
+	// if there is no a custom shoot sound set.
+	//
+	// @param buffer        Destination string buffer.
+	// @param maxlength     Maximum length of output string buffer.
+	//
+	// @return              Number of cells written.
+	// @error				Invalid 'CustomWeapon'
+	public native int GetShootSound(char[] buffer, int maxlength);
+	
+	// Advanced API natives.
+	// See the prototypes above for callback documentation.
+	
+	public native void AddModelHook(ModelHookCallback callback);
+	
+	public native void RemoveModelHook(ModelHookCallback callback);
+	
+	public native void AddSoundHook(SoundHookCallback callback);
+	
+	public native void RemoveSoundHook(SoundHookCallback callback);
 }
 
 #if !defined REQUIRE_PLUGIN
@@ -56,6 +126,13 @@ public void __pl_customweapons_SetNTVOptional()
 	MarkNativeAsOptional("CustomWeapon.CustomWeapon");
 	MarkNativeAsOptional("CustomWeapon.EntityIndex.get");
 	MarkNativeAsOptional("CustomWeapon.SetModel");
+	MarkNativeAsOptional("CustomWeapon.GetModel");
+	MarkNativeAsOptional("CustomWeapon.SetShootSound");
+	MarkNativeAsOptional("CustomWeapon.GetShootSound");
+	MarkNativeAsOptional("CustomWeapon.AddModelHook");
+	MarkNativeAsOptional("CustomWeapon.RemoveModelHook");
+	MarkNativeAsOptional("CustomWeapon.AddSoundHook");
+	MarkNativeAsOptional("CustomWeapon.RemoveSoundHook");
 }
 #endif
 

@@ -1,0 +1,71 @@
+name: 🧙🏼‍♂️ Update Main Server
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ master ]
+
+  pull_request:
+    branches: [ master ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+jobs:
+  build:
+    name: Build ⛏️
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        sm-version: ["1.11.x"]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: 📙 Set Environment Variables
+        run: |
+          echo "PACKAGE_PATH=package/" >> $GITHUB_ENV
+          echo "PLUGINS_PATH=package/plugins" >> $GITHUB_ENV
+          echo "SCRIPTS_PATH=sourcemod/scripting" >> $GITHUB_ENV
+          echo "INCLUDE_PATH=sourcemod/scripting/include" >> $GITHUB_ENV
+
+      - name: ⛑️ Setup SP Compiler ${{ matrix.sm-version }}
+        id: setup-sp
+        uses: rumblefrog/setup-sp@master
+        with:
+          version: ${{ matrix.sm-version }}
+
+      - name: Checkout Custom-Weapons
+        uses: actions/checkout@v2
+        with:
+          path: customweapons
+
+      - name: 🔨 Setup Update Folder, Build Plugins, Copy To Update Folder
+        run: |
+          # Create folder to upload later (upload only changes and not the whole repo)
+          mkdir csgo && echo "Output folder created successfully."
+          mkdir ${{ env.PACKAGE_PATH }}
+          mkdir ${{ env.PLUGINS_PATH }}
+          
+          cp -rT customweapons/sourcemod/ ${{ env.PACKAGE_PATH }}
+          
+          # Add all files into update folder and compile scripts.
+          for script_file in ${{ env.SCRIPTS_PATH }}/*.sp; do
+            output_path=${{ env.PLUGINS_PATH }}/$(basename "${script_file%.*}").smx
+
+            # Compile
+            (
+              spcomp64 ${script_file} -i=${{ env.INCLUDE_PATH }} -i=${{ env.includePath }} -o=${output_path} \
+              && # Compiled successfully.
+              (
+                # Copy over to the update folder.
+                cp --parents ${output_path} csgo && echo "${script_file} ---→ ${output_path}"
+              )
+            ) || echo "${script_file} failed to compile (error code: ${?})" # You should figure out why?
+          done
+        
+      - name: 🏷️ Upload Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: customweapons
+          path: ${{ env.PACKAGE_PATH }}
