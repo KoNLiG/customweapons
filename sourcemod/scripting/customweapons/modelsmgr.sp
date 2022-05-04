@@ -169,26 +169,44 @@ void Hook_OnPostThinkPost(int client)
 	char classname[32];
 	GetEntityClassname(weapon, classname, sizeof(classname));
 	
-	int sequence = GetEntProp(predicted_view_model, Prop_Send, "m_nSequence");
-	float cycle = GetEntPropFloat(predicted_view_model, Prop_Data, "m_flCycle");
+	static int m_nSequenceOffset, m_flCycleOffset;
+	
+	if (!m_nSequenceOffset)
+	{
+		m_nSequenceOffset = FindSendPropInfo("CPredictedViewModel", "m_nSequence");
+	}
+	
+	if (!m_flCycleOffset)
+	{
+		m_flCycleOffset = FindDataMapInfo(predicted_view_model, "m_flCycle");
+	}
+	
+	int sequence = GetEntData(predicted_view_model, m_nSequenceOffset);
+	float cycle = GetEntDataFloat(predicted_view_model, m_flCycleOffset);
 	
 	if (cycle < last_cycle[client] && sequence == last_sequecne[client])
 	{
-		/*
-		StudioHdr studio_hdr = StudioHdr("models/weapons/v_pist_deagle.mdl");
-		Sequence pSequence = studio_hdr.GetSequence(sequence);
-		
 		int new_sequence = FixSequence(classname, sequence);
 		
-		PrintToChatAll("[current %d] new_sequence: %d ?= %d", sequence, new_sequence, LoadFromAddress(view_as<Address>(pSequence) + view_as<Address>(pSequence.animindexindex), NumberType_Int32));
-		
-		SetEntProp(predicted_view_model, Prop_Send, "m_nSequence", new_sequence);
-		*/
+		SetEntData(predicted_view_model, m_nSequenceOffset, new_sequence);
 	}
 	
 	last_sequecne[client] = sequence;
 	last_cycle[client] = cycle;
 }
+
+/*
+CBaseViewModel *pViewModel = pPlayer->GetViewModel();
+if (pViewModel)
+{
+	int nSequence = pViewModel->LookupSequence("idle");
+	if (nSequence != ACTIVITY_NOT_AVAILABLE)
+	{
+		pViewModel->ForceCycle(0);
+		pViewModel->ResetSequence(nSequence);
+	}
+}
+*/
 
 // Credit for FPVMI, should find a better solution.
 stock int FixSequence(char[] classname, int sequence)

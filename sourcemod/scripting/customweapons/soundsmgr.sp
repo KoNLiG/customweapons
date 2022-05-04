@@ -1,5 +1,5 @@
 /*
- *  • Overrides the default game shoot sound with a custom ones.
+ *  • Overrides the default game shot sound with a custom ones.
  *  • 
  */
 
@@ -17,7 +17,7 @@ void SoundsManagerHooks()
 		SetFailState("Failed to find offset 'CBasePlayer::m_hActiveWeapon'");
 	}
 	
-	// Hook shoots temp entity to prevent their sound effect. (CTEFireBullets)
+	// Hook shots temp entity to prevent their sound effect. (CTEFireBullets)
 	AddTempEntHook("Shotgun Shot", Hook_OnShotgunShot);
 }
 
@@ -31,7 +31,7 @@ void CheckPlayerWeaponSounds(int client, int weapon)
 {
 	CustomWeaponData custom_weapon_data;
 	
-	if (custom_weapon_data.GetMyself(weapon) && custom_weapon_data.HasCustomShootSound())
+	if (custom_weapon_data.GetMyself(weapon) && custom_weapon_data.HasCustomShotSound())
 	{
 		if (g_Players[client].default_sounds_enabled)
 		{
@@ -76,7 +76,7 @@ Action Timer_ToggleDefaultSounds(Handle timer, DataPack dp)
 		return Plugin_Continue;
 	}
 	
-	g_Players[client].ToggleDefaultShootSounds(dp.ReadCell());
+	g_Players[client].ToggleDefaultShotSounds(dp.ReadCell());
 	
 	g_Players[client].toggle_sounds_timer = null;
 	
@@ -99,14 +99,14 @@ Action Hook_OnShotgunShot(const char[] teName, const int[] players, int numClien
 	// Try to retrieve and validate the weapon customization data.
 	// If it failed, that means that there are no customizations applied on this weapon.
 	CustomWeaponData custom_weapon_data;
-	if (!custom_weapon_data.GetMyself(weapon) || !custom_weapon_data.HasCustomShootSound())
+	if (!custom_weapon_data.GetMyself(weapon) || !custom_weapon_data.HasCustomShotSound())
 	{
 		return Plugin_Continue;
 	}
 	
-	if (Call_OnSound(client, weapon, custom_weapon_data.shoot_sound) >= Plugin_Handled)
+	if (Call_OnSound(client, weapon, custom_weapon_data.shot_sound) >= Plugin_Handled)
 	{
-		g_Players[client].ToggleDefaultShootSounds(true);
+		g_Players[client].ToggleDefaultShotSounds(true);
 		
 		g_Players[client].default_sounds_enabled = false;
 		
@@ -115,8 +115,31 @@ Action Hook_OnShotgunShot(const char[] teName, const int[] players, int numClien
 	
 	float origin[3];
 	GetClientAbsOrigin(client, origin);
-	EmitAmbientSound(custom_weapon_data.shoot_sound, origin, client, .vol = 0.2);
+	
+	EmitShotSound(custom_weapon_data.shot_sound, client, origin, 0.2);
 	
 	// Block the original sound
 	return Plugin_Stop;
+}
+
+// Wraps between game sounds and third party sounds.
+void EmitShotSound(const char[] sound, int entity, float origin[3], float vol)
+{
+	int channel;
+	int level;
+	float volume;
+	int pitch;
+	
+	char sample[PLATFORM_MAX_PATH];
+	
+	if (GetGameSoundParams(sound, channel, level, volume, pitch, sample, sizeof(sample), entity))
+	{
+		EmitSoundToAll(sample, entity, .channel = channel, .level = level, .volume = vol, .pitch = pitch);
+	}
+	else
+	{
+		strcopy(sample, sizeof(sample), sound);
+		
+		EmitAmbientSound(sample, .pos = origin, .entity = entity, .vol = vol);
+	}
 } 

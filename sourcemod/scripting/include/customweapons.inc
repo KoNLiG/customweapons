@@ -87,26 +87,26 @@ methodmap CustomWeapon
 	// @error				Invalid 'CustomWeapon' or invalid model type.
 	public native int GetModel(CustomWeapon_ModelType model_type, char[] buffer, int maxlength);
 	
-	// Customize the weapon shoot sound. (both client and server side)
+	// Customize the weapon shot sound. (both client and server side)
 	//
 	// Note that the sound should be precached before using this function.
 	//
-	// @param source    	New weapon shoot sound file path.
+	// @param source    	New weapon shot sound file path.
 	//
 	// @error				Invalid 'CustomWeapon', or the given sound isn't precached.
-	public native void SetShootSound(const char source[PLATFORM_MAX_PATH]);
+	public native void SetShotSound(const char source[PLATFORM_MAX_PATH]);
 	
-	// Retrieves the weapon shoot sound.
+	// Retrieves the weapon shot sound.
 	//
 	// The buffer will be a null terminated string
-	// if there is no a custom shoot sound set.
+	// if there is no a custom shot sound set.
 	//
 	// @param buffer        Destination string buffer.
 	// @param maxlength     Maximum length of output string buffer.
 	//
 	// @return              Number of cells written.
 	// @error				Invalid 'CustomWeapon'
-	public native int GetShootSound(char[] buffer, int maxlength);
+	public native int GetShotSound(char[] buffer, int maxlength);
 	
 	// Advanced API natives.
 	// See the prototypes above for callback documentation.
@@ -127,8 +127,8 @@ public void __pl_customweapons_SetNTVOptional()
 	MarkNativeAsOptional("CustomWeapon.EntityIndex.get");
 	MarkNativeAsOptional("CustomWeapon.SetModel");
 	MarkNativeAsOptional("CustomWeapon.GetModel");
-	MarkNativeAsOptional("CustomWeapon.SetShootSound");
-	MarkNativeAsOptional("CustomWeapon.GetShootSound");
+	MarkNativeAsOptional("CustomWeapon.SetShotSound");
+	MarkNativeAsOptional("CustomWeapon.GetShotSound");
 	MarkNativeAsOptional("CustomWeapon.AddModelHook");
 	MarkNativeAsOptional("CustomWeapon.RemoveModelHook");
 	MarkNativeAsOptional("CustomWeapon.AddSoundHook");

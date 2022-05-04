@@ -15,7 +15,6 @@ enum struct Player
 	// Client 'CPredictedViewModel' entity reference.
 	int view_model_reference;
 	
-	// Explains itself.
 	bool default_sounds_enabled;
 	
 	// Timer that toggling 'default_sounds_enabled'.
@@ -50,10 +49,10 @@ enum struct Player
 		return EntRefToEntIndex(this.view_model_reference);
 	}
 	
-	// Used to turn off weapon shoot sounds that are client sided.
-	// During a use of a custom weapon shoot sound this convar will
+	// Used to turn off weapon shot sounds that are client sided.
+	// During a use of a custom weapon shot sound this convar will
 	// be replicated to the weapon owner.
-	void ToggleDefaultShootSounds(bool value)
+	void ToggleDefaultShotSounds(bool value)
 	{
 		static ConVar weapon_sound_falloff_multiplier;
 		if (!weapon_sound_falloff_multiplier && !(weapon_sound_falloff_multiplier = FindConVar("weapon_sound_falloff_multiplier")))
@@ -82,9 +81,9 @@ enum struct CustomWeaponData
 	char world_model[PLATFORM_MAX_PATH];
 	char dropped_model[PLATFORM_MAX_PATH];
 	
-	// Weapon custom shoot sound,
+	// Weapon custom shot sound,
 	// relative to "sounds/*" folder.
-	char shoot_sound[PLATFORM_MAX_PATH];
+	char shot_sound[PLATFORM_MAX_PATH];
 	
 	//======================================//
 	
@@ -125,9 +124,9 @@ enum struct CustomWeaponData
 			return;
 		}
 		
-		if (this.HasCustomShootSound())
+		if (this.HasCustomShotSound())
 		{
-			g_Players[weapon_owner].ToggleDefaultShootSounds(true);
+			g_Players[weapon_owner].ToggleDefaultShotSounds(true);
 			
 			g_Players[weapon_owner].default_sounds_enabled = true;
 		}
@@ -135,9 +134,9 @@ enum struct CustomWeaponData
 		ReEquipWeaponEntity(entity, weapon_owner);
 	}
 	
-	bool HasCustomShootSound()
+	bool HasCustomShotSound()
 	{
-		return this.shoot_sound[0] != '\0';
+		return this.shot_sound[0] != '\0';
 	}
 }
 

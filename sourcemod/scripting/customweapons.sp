@@ -15,7 +15,6 @@
 #include "customweapons/soundsmgr.sp"
 #undef COMPILING_FROM_MAIN
 
-// Whether the plugin loaded late.
 // Used to call a lateload function in 'OnPluginStart()'
 bool g_Lateload;
 
@@ -159,7 +158,7 @@ void LateLoad()
 {
 	for (int current_client = 1; current_client <= MaxClients; current_client++)
 	{
-		if (IsClientConnected(current_client))
+		if (IsClientInGame(current_client))
 		{
 			OnClientPutInServer(current_client);
 			

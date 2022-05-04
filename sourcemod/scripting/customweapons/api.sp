@@ -46,11 +46,11 @@ void CreateNatives()
 	// int GetModel(CustomWeapon_ModelType model_type, char[] buffer, int maxlength)
 	CreateNative("CustomWeapon.GetModel", Native_GetModel);
 	
-	// void SetShootSound(const char source[PLATFORM_MAX_PATH])
-	CreateNative("CustomWeapon.SetShootSound", Native_SetShootSound);
+	// void SetShotSound(const char source[PLATFORM_MAX_PATH])
+	CreateNative("CustomWeapon.SetShotSound", Native_SetShotSound);
 	
-	// int GetShootSound(char[] buffer, int maxlength)
-	CreateNative("CustomWeapon.GetShootSound", Native_GetShootSound);
+	// int GetShotSound(char[] buffer, int maxlength)
+	CreateNative("CustomWeapon.GetShotSound", Native_GetShotSound);
 	
 	// void AddModelHook(ModelHookCallback callback)
 	CreateNative("CustomWeapon.AddModelHook", Native_AddModelHook);
@@ -218,7 +218,7 @@ any Native_GetModel(Handle plugin, int numParams)
 	return 0;
 }
 
-any Native_SetShootSound(Handle plugin, int numParams)
+any Native_SetShotSound(Handle plugin, int numParams)
 {
 	// Param 1: 'CustomWeapon' [this]
 	CustomWeapon custom_weapon = GetNativeCell(1);
@@ -229,7 +229,7 @@ any Native_SetShootSound(Handle plugin, int numParams)
 	char source[PLATFORM_MAX_PATH];
 	
 	// Check for any errors.
-	Native_CheckStringParamLength(2, "shoot sound file path", sizeof(source), true);
+	Native_CheckStringParamLength(2, "shot sound file path", sizeof(source), true);
 	
 	GetNativeString(2, source, sizeof(source));
 	
@@ -243,14 +243,14 @@ any Native_SetShootSound(Handle plugin, int numParams)
 		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
 	}
 	
-	custom_weapon_data.shoot_sound = source;
+	custom_weapon_data.shot_sound = source;
 	
 	custom_weapon_data.UpdateMyself(view_as<int>(custom_weapon));
 	
 	return 0;
 }
 
-any Native_GetShootSound(Handle plugin, int numParams)
+any Native_GetShotSound(Handle plugin, int numParams)
 {
 	// Param 1: 'CustomWeapon' [this]
 	CustomWeapon custom_weapon = GetNativeCell(1);
@@ -268,7 +268,7 @@ any Native_GetShootSound(Handle plugin, int numParams)
 	}
 	
 	int num_bytes;
-	SetNativeString(2, custom_weapon_data.shoot_sound, GetNativeCell(3), .bytes = num_bytes);
+	SetNativeString(2, custom_weapon_data.shot_sound, GetNativeCell(3), .bytes = num_bytes);
 	
 	return num_bytes;
 }
