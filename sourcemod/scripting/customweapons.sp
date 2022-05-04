@@ -62,31 +62,6 @@ public void OnPluginStart()
 	}
 }
 
-public void OnPluginEnd()
-{
-	OnNotifyPluginUnloaded(GetMyHandle());
-}
-
-public void OnNotifyPluginUnloaded(Handle plugin)
-{
-	CustomWeaponData custom_weapon_data;
-	
-	AnyMapSnapshot custom_weapons_snapshot = g_CustomWeapons.Snapshot();
-	
-	for (int current_index, current_key; current_index < custom_weapons_snapshot.Length; current_index++)
-	{
-		current_key = custom_weapons_snapshot.GetKey(current_index);
-		
-		if (custom_weapon_data.GetMyselfByReference(current_key) && custom_weapon_data.plugin == plugin)
-		{
-			// Release the custom weapon data from the plugin.
-			custom_weapon_data.RemoveMyself(current_key);
-		}
-	}
-	
-	delete custom_weapons_snapshot;
-}
-
 public void OnEntityDestroyed(int entity)
 {
 	// Validate the entity index. (for some reason an entity reference can by passed)
