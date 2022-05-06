@@ -23,7 +23,7 @@ public Plugin myinfo =
 	name = "[CS:GO] Custom-Weapons", 
 	author = "KoNLiG", 
 	description = "Provides an API for custom weapons management.", 
-	version = "1.0.0", 
+	version = "1.0.1", 
 	url = "https://github.com/KoNLiG/customweapons"
 };
 
