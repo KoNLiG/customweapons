@@ -70,7 +70,7 @@ Action Timer_ToggleDefaultSounds(Handle timer, DataPack dp)
 		return Plugin_Continue;
 	}
 	
-	int weapon = EntRefToEntIndex(dp.ReadCell())
+	int weapon = EntRefToEntIndex(dp.ReadCell());
 	if (weapon == -1)
 	{
 		return Plugin_Continue;

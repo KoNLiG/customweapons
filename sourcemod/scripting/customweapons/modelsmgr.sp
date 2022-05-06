@@ -107,6 +107,11 @@ Action Hook_OnWeaponEquip(int client, int weapon)
 
 void Hook_OnWeaponDropPost(int client, int weapon)
 {
+	if (weapon == -1)
+	{
+		return;
+	}
+	
 	// Too early to override the dropped model here, 
 	// do it in the next frame!
 	RequestFrame(Frame_SetDroppedModel, EntIndexToEntRef(weapon));
