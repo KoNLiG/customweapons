@@ -70,6 +70,8 @@ Action Timer_ToggleDefaultSounds(Handle timer, DataPack dp)
 		return Plugin_Continue;
 	}
 	
+	g_Players[client].toggle_sounds_timer = null;
+	
 	int weapon = EntRefToEntIndex(dp.ReadCell());
 	if (weapon == -1)
 	{
@@ -77,8 +79,6 @@ Action Timer_ToggleDefaultSounds(Handle timer, DataPack dp)
 	}
 	
 	g_Players[client].ToggleDefaultShotSounds(dp.ReadCell());
-	
-	g_Players[client].toggle_sounds_timer = null;
 	
 	return Plugin_Continue;
 }
