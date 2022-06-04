@@ -35,20 +35,20 @@ void CheckPlayerWeaponSounds(int client, int weapon)
 	{
 		if (g_Players[client].default_sounds_enabled)
 		{
-			CreateToggleDefaultSoundsTimer(client, weapon, false);
+			CreateToggleDefaultSoundsTimer(client, false);
 			
 			g_Players[client].default_sounds_enabled = false;
 		}
 	}
 	else if (!g_Players[client].default_sounds_enabled)
 	{
-		CreateToggleDefaultSoundsTimer(client, weapon, true);
+		CreateToggleDefaultSoundsTimer(client, true);
 		
 		g_Players[client].default_sounds_enabled = true;
 	}
 }
 
-void CreateToggleDefaultSoundsTimer(int client, int weapon, bool value)
+void CreateToggleDefaultSoundsTimer(int client, bool value)
 {
 	// Truncates the old timer. (if exists)
 	delete g_Players[client].toggle_sounds_timer;
@@ -57,7 +57,6 @@ void CreateToggleDefaultSoundsTimer(int client, int weapon, bool value)
 	DataPack dp;
 	g_Players[client].toggle_sounds_timer = CreateDataTimer(GetEntPropFloat(client, Prop_Send, "m_flNextAttack") - GetGameTime() - 0.1, Timer_ToggleDefaultSounds, dp);
 	dp.WriteCell(GetClientUserId(client));
-	dp.WriteCell(EntIndexToEntRef(weapon));
 	dp.WriteCell(value);
 	dp.Reset();
 }
@@ -72,12 +71,6 @@ Action Timer_ToggleDefaultSounds(Handle timer, DataPack dp)
 	
 	g_Players[client].toggle_sounds_timer = null;
 	
-	int weapon = EntRefToEntIndex(dp.ReadCell());
-	if (weapon == -1)
-	{
-		return Plugin_Continue;
-	}
-	
 	g_Players[client].ToggleDefaultShotSounds(dp.ReadCell());
 	
 	return Plugin_Continue;
@@ -87,6 +80,12 @@ Action Timer_ToggleDefaultSounds(Handle timer, DataPack dp)
 Action Hook_OnShotgunShot(const char[] teName, const int[] players, int numClients, float delay)
 {
 	int client = TE_ReadNum("m_iPlayer") + 1;
+	
+	// Make sure 'client' is between the valid boundaries.
+	if (!(1 <= client <= MaxClients))
+	{
+		return Plugin_Continue;
+	}
 	
 	int weapon = GetEntDataEnt2(client, m_hActiveWeaponOffset);
 	

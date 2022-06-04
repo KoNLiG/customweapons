@@ -26,6 +26,7 @@ enum struct Player
 	{
 		this.client = client;
 		this.view_model_reference = INVALID_ENT_REFERENCE;
+		
 		this.default_sounds_enabled = true;
 	}
 	
