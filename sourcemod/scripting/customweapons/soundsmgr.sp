@@ -55,7 +55,7 @@ void CreateToggleDefaultSoundsTimer(int client, bool value)
 	
 	// Create a new one!
 	DataPack dp;
-	g_Players[client].toggle_sounds_timer = CreateDataTimer(GetEntPropFloat(client, Prop_Send, "m_flNextAttack") - GetGameTime() - 0.1, Timer_ToggleDefaultSounds, dp);
+	g_Players[client].toggle_sounds_timer = CreateDataTimer(GetEntPropFloat(client, Prop_Send, "m_flNextAttack") - GetGameTime() - 0.1, Timer_ToggleDefaultSounds, dp, TIMER_FLAG_NO_MAPCHANGE);
 	dp.WriteCell(GetClientUserId(client));
 	dp.WriteCell(value);
 	dp.Reset();

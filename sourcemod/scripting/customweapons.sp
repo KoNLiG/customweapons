@@ -23,7 +23,7 @@ public Plugin myinfo =
 	name = "[CS:GO] Custom-Weapons", 
 	author = "KoNLiG", 
 	description = "Provides an API for custom weapons management.", 
-	version = "1.0.4", 
+	version = "1.0.5", 
 	url = "https://github.com/KoNLiG/customweapons"
 };
 
@@ -77,6 +77,17 @@ public void OnEntityDestroyed(int entity)
 	{
 		// Release the custom weapon data from the plugin.
 		custom_weapon_data.RemoveMyself(entity_reference);
+	}
+}
+
+public void OnMapEnd()
+{
+	for (int current_client = 1; current_client <= MaxClients; current_client++)
+	{
+		if (IsClientInGame(current_client))
+		{
+			g_Players[current_client].toggle_sounds_timer = null;
+		}
 	}
 }
 
