@@ -64,16 +64,13 @@ void CreateToggleDefaultSoundsTimer(int client, bool value)
 Action Timer_ToggleDefaultSounds(Handle timer, DataPack dp)
 {
 	int client = GetClientOfUserId(dp.ReadCell());
-	if (!client)
+	if (client)
 	{
-		return Plugin_Continue;
+		g_Players[client].toggle_sounds_timer = null;
+		g_Players[client].ToggleDefaultShotSounds(dp.ReadCell());
 	}
-	
-	g_Players[client].toggle_sounds_timer = null;
-	
-	g_Players[client].ToggleDefaultShotSounds(dp.ReadCell());
-	
-	return Plugin_Continue;
+
+	return Plugin_Stop;
 }
 
 // Server side.

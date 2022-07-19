@@ -29,15 +29,7 @@ enum struct Player
 		
 		this.default_sounds_enabled = true;
 	}
-	
-	void Close()
-	{
-		this.view_model_reference = 0;
-		this.default_sounds_enabled = false;
-		
-		delete this.toggle_sounds_timer;
-	}
-	
+
 	void InitViewModel()
 	{
 		this.view_model_reference = EntIndexToEntRef(GetEntPropEnt(this.client, Prop_Send, "m_hViewModel"));
