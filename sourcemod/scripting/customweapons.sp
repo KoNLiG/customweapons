@@ -109,12 +109,6 @@ void Hook_OnWeaponSwitchPost(int client, int weapon)
 	SoundsMgr_OnWeaponSwitchPost(client, weapon);
 }
 
-public void OnClientDisconnect(int client)
-{
-	// Frees the slot data.
-	g_Players[client].Close();
-}
-
 bool IsEntityWeapon(int entity)
 {
 	// Retrieve the entity classname.
