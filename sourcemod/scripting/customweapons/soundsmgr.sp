@@ -19,6 +19,22 @@ void SoundsManagerHooks()
 	
 	// Hook shots temp entity to prevent their sound effect. (CTEFireBullets)
 	AddTempEntHook("Shotgun Shot", Hook_OnShotgunShot);
+	
+	RegConsoleCmd("sm_errtst", asd);
+}
+
+Action asd(int client, int argc)
+{
+	CheckPlayerWeaponSounds(client, GetPlayerWeaponSlot(client, 0));
+	
+	RequestFrame(frame);
+	
+	return Plugin_Handled;
+}
+
+void frame()
+{
+	ForceChangeLevel("de_mirage", "tst");
 }
 
 // Client side.
@@ -55,7 +71,7 @@ void CreateToggleDefaultSoundsTimer(int client, bool value)
 	
 	// Create a new one!
 	DataPack dp;
-	g_Players[client].toggle_sounds_timer = CreateDataTimer(GetEntPropFloat(client, Prop_Send, "m_flNextAttack") - GetGameTime() - 0.1, Timer_ToggleDefaultSounds, dp, TIMER_FLAG_NO_MAPCHANGE);
+	g_Players[client].toggle_sounds_timer = CreateDataTimer(GetEntPropFloat(client, Prop_Send, "m_flNextAttack") - GetGameTime() - 0.1, Timer_ToggleDefaultSounds, dp);
 	dp.WriteCell(GetClientUserId(client));
 	dp.WriteCell(value);
 	dp.Reset();

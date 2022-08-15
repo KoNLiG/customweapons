@@ -80,17 +80,6 @@ public void OnEntityDestroyed(int entity)
 	}
 }
 
-public void OnMapEnd()
-{
-	for (int current_client = 1; current_client <= MaxClients; current_client++)
-	{
-		if (IsClientInGame(current_client))
-		{
-			g_Players[current_client].toggle_sounds_timer = null;
-		}
-	}
-}
-
 public void OnClientPutInServer(int client)
 {
 	g_Players[client].Init(client);
