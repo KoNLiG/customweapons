@@ -19,22 +19,6 @@ void SoundsManagerHooks()
 	
 	// Hook shots temp entity to prevent their sound effect. (CTEFireBullets)
 	AddTempEntHook("Shotgun Shot", Hook_OnShotgunShot);
-	
-	RegConsoleCmd("sm_errtst", asd);
-}
-
-Action asd(int client, int argc)
-{
-	CheckPlayerWeaponSounds(client, GetPlayerWeaponSlot(client, 0));
-	
-	RequestFrame(frame);
-	
-	return Plugin_Handled;
-}
-
-void frame()
-{
-	ForceChangeLevel("de_mirage", "tst");
 }
 
 // Client side.
