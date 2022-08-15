@@ -3,9 +3,7 @@
  *  • Initializes client global vars that related to models.
  */
 
-#if !defined COMPILING_FROM_MAIN
-#error "Attemped to compile from the wrong file"
-#endif
+#assert defined COMPILING_FROM_MAIN
 
 void ModelsManagerHooks()
 {
@@ -29,7 +27,7 @@ void Event_OnPlayerSpawn(Event event, const char[] name, bool dontBroadcast)
 	{
 		// Only needs to be initialized here once since CPredictedViewModel entity
 		// is created for the client in 'CBasePlayer::Spawn' (`CreateViewModel();`).
-		g_Players[client].InitViewModel();
+		g_Players[client].InitViewModels();
 	}
 }
 
@@ -44,7 +42,7 @@ void ModelsMgr_OnWeaponSwitchPost(int client, int weapon)
 		return;
 	}
 	
-	int predicted_view_model = g_Players[client].GetViewModel();
+	int predicted_view_model = g_Players[client].GetViewModel(VM_INDEX_ORIGINAL);
 	if (predicted_view_model == -1)
 	{
 		return;
@@ -140,23 +138,37 @@ void Frame_SetDroppedModel(any weapon_reference)
 
 void Hook_OnPostThinkPost(int client)
 {
+	static int last_weapon[MAXPLAYERS + 1];
 	static int last_sequecne[MAXPLAYERS + 1];
 	static float last_cycle[MAXPLAYERS + 1];
 	
-	int predicted_view_model = g_Players[client].GetViewModel();
-	if (predicted_view_model == -1)
+	int original_vm = g_Players[client].GetViewModel(VM_INDEX_ORIGINAL), 
+	custom_vm = g_Players[client].GetViewModel(VM_INDEX_CUSTOM);
+	
+	if (original_vm == -1 || custom_vm == -1)
 	{
 		return;
 	}
 	
-	// Get the client active weapon by 'predicted_view_model'.
-	int weapon = GetEntPropEnt(predicted_view_model, Prop_Send, "m_hWeapon");
-	if (weapon == -1)
+	int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+	int sequence = GetEntProp(original_vm, Prop_Send, "m_nSequence");
+	float cycle = GetEntPropFloat(original_vm, Prop_Data, "m_flCycle");
+	
+	if (weapon <= 0)
 	{
+		PrintToChatAll("Pre: (weapon <= 0)");
+		
+		int EntEffects = GetEntProp(custom_vm, Prop_Send, "m_fEffects");
+		EntEffects |= EF_NODRAW;
+		SetEntProp(custom_vm, Prop_Send, "m_fEffects", EntEffects);
+		
+		last_weapon[client] = weapon;
+		last_sequecne[client] = sequence;
+		last_cycle[client] = cycle;
+		
 		return;
 	}
 	
-	// Retrieve and validate the entity reference.
 	int entity_reference = EntIndexToEntRef(weapon);
 	if (entity_reference == -1)
 	{
@@ -168,12 +180,18 @@ void Hook_OnPostThinkPost(int client)
 	CustomWeaponData custom_weapon_data;
 	if (!g_CustomWeapons.GetArray(entity_reference, custom_weapon_data, sizeof(custom_weapon_data)))
 	{
-		return;
+		// return;
 	}
 	
-	char classname[32];
-	GetEntityClassname(weapon, classname, sizeof(classname));
+	/*
+	int weapon = GetEntPropEnt(original_vm, Prop_Send, "m_hWeapon");
+	if (weapon == -1)
+	{
+		return;
+	}
+	*/
 	
+	/*
 	static int m_nSequenceOffset, m_flCycleOffset;
 	
 	if (!m_nSequenceOffset)
@@ -189,80 +207,46 @@ void Hook_OnPostThinkPost(int client)
 	int sequence = GetEntData(predicted_view_model, m_nSequenceOffset);
 	float cycle = GetEntDataFloat(predicted_view_model, m_flCycleOffset);
 	
-	if (cycle < last_cycle[client] && sequence == last_sequecne[client])
+	*/
+	
+	if (weapon != last_weapon[client])
 	{
-		int new_sequence = FixSequence(classname, sequence);
+		PrintToChatAll("Pre: (weapon != last_weapon[client])");
 		
-		SetEntData(predicted_view_model, m_nSequenceOffset, new_sequence);
+		int EntEffects = GetEntProp(original_vm, Prop_Send, "m_fEffects");
+		EntEffects |= EF_NODRAW;
+		SetEntProp(original_vm, Prop_Send, "m_fEffects", EntEffects);
+		
+		//EntEffects = GetEntProp(custom_vm, Prop_Send, "m_fEffects");
+		//EntEffects &= ~EF_NODRAW;
+		//SetEntProp(custom_vm, Prop_Send, "m_fEffects", EntEffects);
+		
+		int precache_index = GetModelPrecacheIndex(custom_weapon_data.view_model);
+		if (precache_index == INVALID_STRING_INDEX)
+		{
+			return;
+		}
+		
+		// m_iViewModelIndex
+		SetEntProp(weapon, Prop_Send, "m_nViewModelIndex", 0);
+		// SetEntProp(weapon, Prop_Send, "m_iViewModelIndex", precache_index);
+		PrintToChatAll("%d ?= %d", GetEntProp(weapon, Prop_Send, "m_iViewModelIndex"), precache_index);
+		
+		SetEntProp(custom_vm, Prop_Send, "m_nSequence", GetEntProp(original_vm, Prop_Send, "m_nSequence"));
+		SetEntPropFloat(custom_vm, Prop_Send, "m_flPlaybackRate", GetEntPropFloat(original_vm, Prop_Send, "m_flPlaybackRate"));
+	}
+	else
+	{
+		SetEntProp(custom_vm, Prop_Send, "m_nSequence", GetEntProp(original_vm, Prop_Send, "m_nSequence"));
+		SetEntPropFloat(custom_vm, Prop_Send, "m_flPlaybackRate", GetEntPropFloat(original_vm, Prop_Send, "m_flPlaybackRate"));
+		
+		if (cycle < last_cycle[client] && sequence == last_sequecne[client])
+		{
+			SetEntProp(custom_vm, Prop_Send, "m_nSequence", 0);
+		}
 	}
 	
+	last_weapon[client] = weapon;
 	last_sequecne[client] = sequence;
 	last_cycle[client] = cycle;
-}
-
-/*
-CBaseViewModel *pViewModel = pPlayer->GetViewModel();
-if (pViewModel)
-{
-	int nSequence = pViewModel->LookupSequence("idle");
-	if (nSequence != ACTIVITY_NOT_AVAILABLE)
-	{
-		pViewModel->ForceCycle(0);
-		pViewModel->ResetSequence(nSequence);
-	}
-}
-*/
-
-// Credit for FPVMI, should find a better solution.
-stock int FixSequence(char[] classname, int sequence)
-{
-	if (StrEqual(classname, "weapon_knife"))
-	{
-		switch (sequence)
-		{
-			case 3:return 4;
-			case 4:return 3;
-			case 5:return 6;
-			case 6:return 5;
-			case 7:return 8;
-			case 8:return 7;
-			case 9:return 10;
-			case 10:return 11;
-			case 11:return 10;
-		}
-	}
-	else if (StrEqual(classname, "weapon_ak47"))
-	{
-		switch (sequence)
-		{
-			case 3:return 2;
-			case 2:return 1;
-			case 1:return 3;
-		}
-	}
-	else if (StrEqual(classname, "weapon_mp7"))
-	{
-		switch (sequence)
-		{
-			case 3:return -1;
-		}
-	}
-	else if (StrEqual(classname, "weapon_awp"))
-	{
-		switch (sequence)
-		{
-			case 1:return -1;
-		}
-	}
-	else if (StrEqual(classname, "weapon_deagle"))
-	{
-		switch (sequence)
-		{
-			case 3:return 2;
-			case 2:return 1;
-			case 1:return 3;
-		}
-	}
-	
-	return sequence;
 } 

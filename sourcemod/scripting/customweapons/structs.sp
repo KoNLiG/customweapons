@@ -7,13 +7,20 @@
 #error "Attemped to compile from the wrong file"
 #endif
 
+// Originally taken from:
+// https://github.com/perilouswithadollarsign/cstrike15_src/blob/f82112a2388b841d72cb62ca48ab1846dfcc11c8/game/shared/shareddefs.h#L334
+#define MAX_VIEWMODELS 2
+
+#define VM_INDEX_ORIGINAL 0
+#define VM_INDEX_CUSTOM 1
+
 enum struct Player
 {
 	// Our client slot index.
 	int client;
 	
 	// Client 'CPredictedViewModel' entity reference.
-	int view_model_reference;
+	int view_model_reference[MAX_VIEWMODELS];
 	
 	bool default_sounds_enabled;
 	
@@ -25,29 +32,38 @@ enum struct Player
 	void Init(int client)
 	{
 		this.client = client;
-		this.view_model_reference = INVALID_ENT_REFERENCE;
+		this.view_model_reference = { INVALID_ENT_REFERENCE, INVALID_ENT_REFERENCE };
 		
 		this.default_sounds_enabled = true;
 	}
 	
 	void Close()
 	{
-		this.view_model_reference = 0;
+		this.view_model_reference = { 0, 0 };
 		this.default_sounds_enabled = false;
 		
 		delete this.toggle_sounds_timer;
 	}
 	
-	void InitViewModel()
+	void InitViewModels()
 	{
-		this.view_model_reference = EntIndexToEntRef(GetEntPropEnt(this.client, Prop_Send, "m_hViewModel"));
+		this.view_model_reference[VM_INDEX_ORIGINAL] = EntIndexToEntRef(GetEntPropEnt(this.client, Prop_Send, "m_hViewModel", VM_INDEX_ORIGINAL));
+		// this.view_model_reference[VM_INDEX_CUSTOM] = EntIndexToEntRef(GetEntPropEnt(this.client, Prop_Send, "m_hViewModel", VM_INDEX_CUSTOM));
+		
+		int custom_vm = CreateEntityByName("predicted_viewmodel");
+		
+		this.view_model_reference[VM_INDEX_CUSTOM] = EntIndexToEntRef(custom_vm);
+		
+		SetEntProp(custom_vm, Prop_Send, "m_nViewModelIndex", 1);
+		
+		PrintToChatAll("custom_vm: %d", custom_vm);
 	}
 	
 	// Retrieves the client predicted view model entity index.
 	// Will return -1 if unavailable.
-	int GetViewModel()
+	int GetViewModel(int index)
 	{
-		return EntRefToEntIndex(this.view_model_reference);
+		return EntRefToEntIndex(this.view_model_reference[index]);
 	}
 	
 	// Used to turn off weapon shot sounds that are client sided.
@@ -123,6 +139,17 @@ enum struct CustomWeaponData
 		if (weapon_owner == -1)
 		{
 			return;
+		}
+		
+		int custom_vm = g_Players[weapon_owner].GetViewModel(VM_INDEX_CUSTOM);
+		if (custom_vm != -1)
+		{
+			int EntEffects = GetEntProp(custom_vm, Prop_Send, "m_fEffects");
+			if (!(EntEffects & EF_NODRAW))
+			{
+				EntEffects |= EF_NODRAW;
+				SetEntProp(custom_vm, Prop_Send, "m_fEffects", EntEffects);
+			}
 		}
 		
 		if (this.HasCustomShotSound())

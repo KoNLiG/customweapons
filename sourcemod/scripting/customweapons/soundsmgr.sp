@@ -2,10 +2,8 @@
  *  • Overrides the default game shot sound with a custom ones.
  *  • 
  */
-
-#if !defined COMPILING_FROM_MAIN
-#error "Attemped to compile from the wrong file"
-#endif
+ 
+#assert defined COMPILING_FROM_MAIN
 
 // 'm_hActiveWeapon' netprop offset.
 int m_hActiveWeaponOffset;

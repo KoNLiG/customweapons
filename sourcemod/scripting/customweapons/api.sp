@@ -3,9 +3,7 @@
  *  • Registeration of the plugin library.
  */
 
-#if !defined COMPILING_FROM_MAIN
-#error "Attemped to compile from the wrong file"
-#endif
+#assert defined COMPILING_FROM_MAIN
 
 int ValidateCustomWeapon(CustomWeapon custom_weapon)
 {

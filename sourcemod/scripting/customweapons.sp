@@ -7,6 +7,8 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+#define EF_NODRAW 32
+
 // External file compilation protection.
 #define COMPILING_FROM_MAIN
 #include "customweapons/structs.sp"
@@ -23,7 +25,7 @@ public Plugin myinfo =
 	name = "[CS:GO] Custom-Weapons", 
 	author = "KoNLiG", 
 	description = "Provides an API for custom weapons management.", 
-	version = "1.0.5", 
+	version = "1.1.5", 
 	url = "https://github.com/KoNLiG/customweapons"
 };
 
@@ -149,7 +151,7 @@ void LateLoad()
 			OnClientPutInServer(current_client);
 			
 			// Late load initialization.
-			g_Players[current_client].InitViewModel();
+			g_Players[current_client].InitViewModels();
 		}
 	}
 }
