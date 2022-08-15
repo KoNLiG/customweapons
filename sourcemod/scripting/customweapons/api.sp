@@ -146,6 +146,7 @@ any Native_SetModel(Handle plugin, int numParams)
 		case CustomWeaponModel_World:
 		{
 			custom_weapon_data.world_model = source;
+			
 			ReEquipWeaponEntity(entity);
 		}
 		case CustomWeaponModel_Dropped:

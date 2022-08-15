@@ -156,7 +156,7 @@ void LateLoad()
 
 void ReEquipWeaponEntity(int weapon, int weapon_owner = -1)
 {
-	if (weapon_owner == -1 && (weapon_owner = GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity")) == -1)
+	if ((weapon_owner == -1 && (weapon_owner = GetEntPropEnt(weapon, Prop_Data, "m_hOwnerEntity")) == -1) || !IsClientOwnWeapon(weapon_owner, weapon))
 	{
 		return;
 	}
@@ -185,3 +185,18 @@ void Frame_EquipWeapon(DataPack dp)
 	
 	dp.Close();
 } 
+
+bool IsClientOwnWeapon(int client, int weapon)
+{
+	int max_weapons = GetEntPropArraySize(client, Prop_Send, "m_hMyWeapons");
+	
+	for (int current_weapon, ent = -1; current_weapon < max_weapons; current_weapon++)
+	{
+		if ((ent = GetEntPropEnt(client, Prop_Send, "m_hMyWeapons", current_weapon)) != -1 && ent == weapon)
+		{
+			return true;
+		}
+	}
+	
+	return false;
+}
