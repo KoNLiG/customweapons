@@ -22,6 +22,9 @@ int ValidateCustomWeapon(CustomWeapon custom_weapon)
 // Forward handles.
 PrivateForward g_ModelHook;
 PrivateForward g_SoundHook;
+PrivateForward g_RunCmdHook;
+PrivateForward g_HolsterHook;
+PrivateForward g_DeployHook;
 
 void InitializeAPI()
 {
@@ -39,6 +42,16 @@ void CreateNatives()
 	
 	// property int EntityIndex
 	CreateNative("CustomWeapon.EntityIndex.get", Native_GetEntityIndex);
+
+	// property float Reload
+	CreateNative("CustomWeapon.Deploy.get", Native_GetDeploy);
+	CreateNative("CustomWeapon.Deploy.set", Native_SetDeploy);
+
+	CreateNative("CustomWeapon.Speed.get", Native_GetSpeed);
+	CreateNative("CustomWeapon.Speed.set", Native_SetSpeed);
+
+	CreateNative("CustomWeapon.Reload.get", Native_GetReload);
+	CreateNative("CustomWeapon.Reload.set", Native_SetReload);
 	
 	// void SetModel(CustomWeapon_ModelType model_type, const char[] source)
 	CreateNative("CustomWeapon.SetModel", Native_SetModel);
@@ -57,6 +70,20 @@ void CreateNatives()
 	
 	// void RemoveModelHook(ModelHookCallback callback)
 	CreateNative("CustomWeapon.RemoveModelHook", Native_RemoveModelHook);
+
+	// void AddRunCmdHook(RunCmdHookCallback callback)
+	CreateNative("CustomWeapon.AddRunCmdHook", Native_AddRunCmdHook);
+	
+	// void RemoveRunCmdHook(RunCmdHookCallback callback)
+	CreateNative("CustomWeapon.RemoveRunCmdHook", Native_RemoveRunCmdHook);
+
+	CreateNative("CustomWeapon.AddHolsterHook", Native_AddHolsterHook);
+
+	CreateNative("CustomWeapon.RemoveHolsterHook", Native_RemoveHolsterHook);
+
+	CreateNative("CustomWeapon.AddDeployHook", Native_AddDeployHook);
+
+	CreateNative("CustomWeapon.RemoveDeployHook", Native_RemoveDeployHook);
 }
 
 any Native_CustomWeapon(Handle plugin, int numParams)
@@ -84,6 +111,9 @@ any Native_CustomWeapon(Handle plugin, int numParams)
 	{
 		return 0;
 	}
+
+	// Seems no need to unhook on entity destroy?
+	SDKHook(entity, SDKHook_ReloadPost, AttributesMgr_OnWeaponReload);
 	
 	return view_as<CustomWeapon>(entity_reference);
 }
@@ -99,6 +129,120 @@ any Native_GetEntityIndex(Handle plugin, int numParams)
 	}
 	
 	return EntRefToEntIndex(entity_reference);
+}
+
+any Native_GetDeploy(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+
+	return custom_weapon_data.deploy;
+}
+
+any Native_SetDeploy(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+
+	custom_weapon_data.deploy = GetNativeCell(2);
+	custom_weapon_data.UpdateMyself(view_as<int>(custom_weapon));
+	return 1;
+}
+
+any Native_GetSpeed(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+
+	return custom_weapon_data.speed;
+}
+
+any Native_SetSpeed(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+
+	custom_weapon_data.speed = GetNativeCell(2);
+	custom_weapon_data.UpdateMyself(view_as<int>(custom_weapon));
+	return 1;
+}
+
+any Native_GetReload(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+
+	return custom_weapon_data.reload;
+}
+
+any Native_SetReload(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	CustomWeapon custom_weapon = GetNativeCell(1);
+
+	CustomWeaponData custom_weapon_data;
+	if (!custom_weapon_data.GetMyselfByReference(view_as<int>(custom_weapon)))
+	{
+		custom_weapon_data.plugin = plugin;
+	}
+	else if (custom_weapon_data.plugin != plugin)
+	{
+		ThrowNativeError(SP_ERROR_MEMACCESS, "Access violation");
+	}
+
+	custom_weapon_data.reload = GetNativeCell(2);
+	custom_weapon_data.UpdateMyself(view_as<int>(custom_weapon));
+	return 1;
 }
 
 any Native_SetModel(Handle plugin, int numParams)
@@ -295,6 +439,66 @@ any Native_RemoveModelHook(Handle plugin, int numParams)
 	return 0;
 }
 
+any Native_AddRunCmdHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_RunCmdHook.AddFunction(plugin, GetNativeFunction(2));
+	
+	return 0;
+}
+
+any Native_RemoveRunCmdHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_RunCmdHook.RemoveFunction(plugin, GetNativeFunction(2));
+	
+	return 0;
+}
+
+any Native_AddHolsterHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_HolsterHook.AddFunction(plugin, GetNativeFunction(2));
+	
+	return 0;
+}
+
+any Native_RemoveHolsterHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_HolsterHook.RemoveFunction(plugin, GetNativeFunction(2));
+	
+	return 0;
+}
+
+any Native_AddDeployHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_DeployHook.AddFunction(plugin, GetNativeFunction(2));
+	
+	return 0;
+}
+
+any Native_RemoveDeployHook(Handle plugin, int numParams)
+{
+	// Param 1: 'CustomWeapon' [this]
+	ValidateCustomWeapon(view_as<CustomWeapon>(GetNativeCell(1)));
+	
+	g_DeployHook.RemoveFunction(plugin, GetNativeFunction(2));
+	
+	return 0;
+}
+
 void Native_CheckStringParamLength(int param_number, const char[] item_name, int max_length, bool can_be_empty = false, int &param_length = 0)
 {
 	int error;
@@ -317,8 +521,11 @@ void Native_CheckStringParamLength(int param_number, const char[] item_name, int
 
 void CreateForwards()
 {
-	g_ModelHook = new PrivateForward(ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_String);
-	g_SoundHook = new PrivateForward(ET_Hook, Param_Cell, Param_Cell, Param_String);
+	g_ModelHook   = new PrivateForward(ET_Hook, Param_Cell, Param_Cell, Param_Cell, Param_String);
+	g_SoundHook   = new PrivateForward(ET_Hook, Param_Cell, Param_Cell, Param_String);
+	g_RunCmdHook  = new PrivateForward(ET_Hook, Param_Cell, Param_Cell, Param_CellByRef, Param_Cell);
+	g_HolsterHook = new PrivateForward(ET_Ignore, Param_Cell, Param_Cell);
+	g_DeployHook  = new PrivateForward(ET_Ignore, Param_Cell, Param_Cell);
 }
 
 Action Call_OnModel(int client, int weapon, CustomWeapon_ModelType model_type, char model[PLATFORM_MAX_PATH])
@@ -346,4 +553,34 @@ Action Call_OnSound(int client, int weapon, char sound[PLATFORM_MAX_PATH])
 	Call_Finish(result);
 	
 	return result;
+}
+
+Action Call_OnRunCmd(int client, int weapon, int &buttons, int lastButtons)
+{
+	Action result;
+	
+	Call_StartForward(g_RunCmdHook);
+	Call_PushCell(client);
+	Call_PushCell(weapon);
+	Call_PushCellRef(buttons);
+	Call_PushCell(lastButtons);
+	Call_Finish(result);
+	
+	return result;
+} 
+
+void Call_OnHolster(int client, int weapon)
+{
+	Call_StartForward(g_HolsterHook);
+	Call_PushCell(client);
+	Call_PushCell(weapon);
+	Call_Finish();
+} 
+
+void Call_OnDeploy(int client, int weapon)
+{
+	Call_StartForward(g_DeployHook);
+	Call_PushCell(client);
+	Call_PushCell(weapon);
+	Call_Finish();
 } 

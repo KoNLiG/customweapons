@@ -11,6 +11,7 @@
 #define COMPILING_FROM_MAIN
 #include "customweapons/structs.sp"
 #include "customweapons/api.sp"
+#include "customweapons/attributesmgr.sp"
 #include "customweapons/modelsmgr.sp"
 #include "customweapons/soundsmgr.sp"
 #undef COMPILING_FROM_MAIN
@@ -49,11 +50,10 @@ public void OnPluginStart()
 	// Initialize all global variables.
 	InitializeGlobalVariables();
 	
-	// Perform hooks that required for the models manager.
+	// Perform hooks that required for sub modules.
 	ModelsManagerHooks();
-	
-	// Perform hooks that required for the sounds manager.
 	SoundsManagerHooks();
+	AttributesMgrHooks();
 	
 	// Late late function for secure measures.
 	if (g_Lateload)
@@ -89,19 +89,65 @@ public void OnClientPutInServer(int client)
 	
 	// 'SDKHook_WeaponSwitchPost' SDKHook are used both in `soundsmgr.sp` and `modelsmgr.sp`,
 	// theirfore we will hook it globaly and each subfile will use sepearated "callback".
+	SDKHook(client, SDKHook_WeaponSwitch, Hook_OnWeaponSwitch);
 	SDKHook(client, SDKHook_WeaponSwitchPost, Hook_OnWeaponSwitchPost);
+}
+
+void Hook_OnWeaponSwitch(int client, int weapon) 
+{
+	AttributesMgr_OnWeaponSwitch(client, weapon);
 }
 
 void Hook_OnWeaponSwitchPost(int client, int weapon)
 {
 	ModelsMgr_OnWeaponSwitchPost(client, weapon);
 	SoundsMgr_OnWeaponSwitchPost(client, weapon);
+	AttributesMgr_OnWeaponSwitchPost(client, weapon);
 }
 
 public void OnClientDisconnect(int client)
 {
 	// Frees the slot data.
 	g_Players[client].Close();
+}
+
+/**
+ * @brief Called when a clients movement buttons are being processed.
+ *  
+ * @param client            The client index.
+ * @param iButtons          Copyback buffer containing the current commands. (as bitflags - see entity_prop_stocks.inc)
+ * @param iImpulse          Copyback buffer containing the current impulse command.
+ * @param flVelocity        Players desired velocity.
+ * @param flAngles          Players desired view angles.    
+ * @param weaponID          The entity index of the new weapon if player switches weapon, 0 otherwise.
+ * @param iSubType          Weapon subtype when selected from a menu.
+ * @param iCmdNum           Command number. Increments from the first command sent.
+ * @param iTickCount        Tick count. A client prediction based on the server GetGameTickCount value.
+ * @param iSeed             Random seed. Used to determine weapon recoil, spread, and other predicted elements.
+ * @param iMouse            Mouse direction (x, y).
+ **/ 
+public Action OnPlayerRunCmd(int client, int &iButtons, int &iImpulse, float flVelocity[3], float flAngles[3], int &weaponID, int &iSubType, int &iCmdNum, int &iTickCount, int &iSeed, int iMouse[2])
+{
+	// Initialize variables
+	Action hResult; static int iLastButtons[MAXPLAYERS+1];
+
+	// If the client is alive, than continue
+	if (IsPlayerAlive(client))
+	{
+		// Dublicate the button buffer
+		int iButton = iButtons; /// for weapon forward
+		
+		// Forward event to modules
+		hResult = AttributesMgr_OnPlayerRunCmd(client, iButtons, iLastButtons[client]);
+		
+		// Store the previous button
+		iLastButtons[client] = iButton;
+		
+		// Allow button
+		return hResult;
+	}
+
+	return Plugin_Continue;
 }
 
 bool IsEntityWeapon(int entity)

@@ -36,6 +36,28 @@ typedef ModelHookCallback = function Action (int client, int weapon, CustomWeapo
 */
 typedef SoundHookCallback = function Action (int client, int weapon, char sound[PLATFORM_MAX_PATH]);
 
+/**
+ * @brief Called on each frame of a weapon holding.
+ *
+ * @param client			The client index.
+ * @param weapon			The weapon index.
+ * @param iButtons			The buttons buffer.
+ * @param iLastButtons		The last buttons buffer.
+ *
+ * @return                  Plugin_Continue to allow buttons. Anything else 
+ *                          (like Plugin_Changed) to change buttons.
+ **/
+typedef RunCmdHookCallback = function Action (int client, int weapon, int &iButtons, int iLastButtons);
+
+/**
+ * @brief Called on some general command hook triggered.
+ *
+ * @param client			The client index.
+ * @param weapon			The weapon index.
+ *
+ **/
+typedef GeneralHookCallback = function void (int client, int weapon);
+
 methodmap CustomWeapon
 {
 	// Constructor of CustomWeapon. Can be used to manipulate features of a weapon entity.
@@ -51,18 +73,36 @@ methodmap CustomWeapon
 	public native CustomWeapon(int entity);
 	
 	// Retrieves the weapon raw entity index.
-    //
-    // This native can be used to determine whether this
-    // CustomWeapon data is still valid and available to use.
-    //
-    // Note that if this native returns -1, this means that this CustomWeapon
-    // data is corrupted and can no longer be used!
-    //
-    // @return             Weapon entity index, or -1 if the entity is no longer available.
-    property int EntityIndex
-    {
-        public native get();
-    }
+	//
+	// This native can be used to determine whether this
+	// CustomWeapon data is still valid and available to use.
+	//
+	// Note that if this native returns -1, this means that this CustomWeapon
+	// data is corrupted and can no longer be used!
+	//
+	// @return             Weapon entity index, or -1 if the entity is no longer available.
+	property int EntityIndex
+	{
+		public native get();
+	}
+
+	property float Deploy
+	{
+		public native get();
+		public native set(float value);
+	}
+
+	property float Speed
+	{
+		public native get();
+		public native set(float value);
+	}
+
+	property float Reload
+	{
+		public native get();
+		public native set(float value);
+	}
 	
 	// Customize the weapon model. (view, world, dropped)
 	//
@@ -118,6 +158,18 @@ methodmap CustomWeapon
 	public native void AddSoundHook(SoundHookCallback callback);
 	
 	public native void RemoveSoundHook(SoundHookCallback callback);
+
+	public native void AddRunCmdHook(RunCmdHookCallback callback);
+	
+	public native void RemoveRunCmdHook(RunCmdHookCallback callback);
+
+	public native void AddHolsterHook(GeneralHookCallback callback);
+	
+	public native void RemoveHolsterHook(GeneralHookCallback callback);
+
+	public native void AddDeployHook(GeneralHookCallback callback);
+	
+	public native void RemoveDeployHook(GeneralHookCallback callback);
 }
 
 #if !defined REQUIRE_PLUGIN
@@ -125,6 +177,12 @@ public void __pl_customweapons_SetNTVOptional()
 {
 	MarkNativeAsOptional("CustomWeapon.CustomWeapon");
 	MarkNativeAsOptional("CustomWeapon.EntityIndex.get");
+	MarkNativeAsOptional("CustomWeapon.Deploy.get");
+	MarkNativeAsOptional("CustomWeapon.Deploy.set");
+	MarkNativeAsOptional("CustomWeapon.Speed.get");
+	MarkNativeAsOptional("CustomWeapon.Speed.set");
+	MarkNativeAsOptional("CustomWeapon.Reload.get");
+	MarkNativeAsOptional("CustomWeapon.Reload.set");
 	MarkNativeAsOptional("CustomWeapon.SetModel");
 	MarkNativeAsOptional("CustomWeapon.GetModel");
 	MarkNativeAsOptional("CustomWeapon.SetShotSound");
@@ -133,6 +191,12 @@ public void __pl_customweapons_SetNTVOptional()
 	MarkNativeAsOptional("CustomWeapon.RemoveModelHook");
 	MarkNativeAsOptional("CustomWeapon.AddSoundHook");
 	MarkNativeAsOptional("CustomWeapon.RemoveSoundHook");
+	MarkNativeAsOptional("CustomWeapon.AddRunCmdHook");
+	MarkNativeAsOptional("CustomWeapon.RemoveRunCmdHook");
+	MarkNativeAsOptional("CustomWeapon.AddHolsterHook");
+	MarkNativeAsOptional("CustomWeapon.RemoveHolsterHook");
+	MarkNativeAsOptional("CustomWeapon.AddDeployHook");
+	MarkNativeAsOptional("CustomWeapon.RemoveDeployHook");
 }
 #endif
 

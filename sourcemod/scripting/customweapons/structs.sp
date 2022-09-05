@@ -19,6 +19,13 @@ enum struct Player
     
     // Timer that toggling 'default_sounds_enabled'.
     Handle toggle_sounds_timer;
+
+    // determines whether client can trigger runcmd hook
+    bool run_cmd;
+
+    // record for weapon switch
+    int last_weapon_reference;
+    int current_weapon_reference;
     
     //======================================//
     
@@ -28,12 +35,19 @@ enum struct Player
         this.view_model_reference = INVALID_ENT_REFERENCE;
         
         this.default_sounds_enabled = true;
+
+        this.run_cmd = false;
+        this.last_weapon_reference = INVALID_ENT_REFERENCE;
+        this.current_weapon_reference = INVALID_ENT_REFERENCE;
     }
     
     void Close()
     {
         this.view_model_reference = 0;
         this.default_sounds_enabled = false;
+        this.run_cmd = false;
+        this.last_weapon_reference = 0;
+        this.current_weapon_reference = 0;
         
         delete this.toggle_sounds_timer;
     }
@@ -88,6 +102,11 @@ enum struct CustomWeaponData
     // Weapon custom shot sound,
     // relative to "sounds/*" folder.
     char shot_sound[PLATFORM_MAX_PATH];
+
+    // Attributes
+    float deploy; // The duration of reload for a weapon.  ['0.0' = default | '-1.0' = instant]
+    float speed;  // The delay between shoots of a weapon. ['0.0' = default | '-1.0' = instant]
+    float reload; // The duration of deploy for a weapon.  ['0.0' = default | '-1.0' = instant]
     
     //======================================//
     
