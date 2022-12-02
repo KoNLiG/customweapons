@@ -95,7 +95,7 @@ enum struct CustomWeaponData
     void UpdateMyself(int entity_reference)
     {
         // Copies back the vehicle data to the global trie map.
-        g_CustomWeapons.SetArray(entity_reference, this, sizeof(this));
+        g_CustomWeapons.SetArray(entity_reference, this, sizeof(CustomWeaponData));
     }
     
     bool RemoveMyself(int entity_reference)
@@ -117,7 +117,7 @@ enum struct CustomWeaponData
     bool GetMyselfByReference(int entity_reference)
     {
         // Same function as above, with entity reference support.
-        return g_CustomWeapons.GetArray(entity_reference, this, sizeof(this));
+        return g_CustomWeapons.GetArray(entity_reference, this, sizeof(CustomWeaponData));
     }
     
     void Close(int entity)
