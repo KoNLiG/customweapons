@@ -151,7 +151,7 @@ void ReEquipWeaponEntity(int weapon, int weapon_owner = -1)
     }
 
     // Remove the weapon.
-    RemovePlayerItem(weapon_owner, weapon);
+    SDKHooks_DropWeapon(weapon_owner, weapon);
 
     // Equip the weapon back in a frame.
     DataPack dp = new DataPack();
@@ -159,17 +159,22 @@ void ReEquipWeaponEntity(int weapon, int weapon_owner = -1)
     dp.WriteCell(EntIndexToEntRef(weapon));
     dp.Reset();
 
-    RequestFrame(Frame_EquipWeapon, dp);
+    EquipPlayerWeapon(weapon_owner, weapon);
+
+    RequestFrame(SwitchWeapon, dp);
 }
 
-void Frame_EquipWeapon(DataPack dp)
+void SwitchWeapon(DataPack dp)
 {
     int client = GetClientOfUserId(dp.ReadCell());
     int weapon = EntRefToEntIndex(dp.ReadCell());
 
     if (client && weapon != -1)
     {
-        EquipPlayerWeapon(client, weapon);
+        char classname[32];
+        GetEntityClassname(weapon, classname, sizeof(classname));
+
+        FakeClientCommand(client, "use %s", classname);
     }
 
     dp.Close();
