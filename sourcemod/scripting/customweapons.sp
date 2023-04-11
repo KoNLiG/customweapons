@@ -175,6 +175,10 @@ void SwitchWeapon(DataPack dp)
         GetEntityClassname(weapon, classname, sizeof(classname));
 
         FakeClientCommand(client, "use %s", classname);
+
+        // Apparently 'use' command doesn't trigger 'WeaponEquip' event,
+        // so trigger it manually.
+        Hook_OnWeaponEquip(client, weapon);
     }
 
     dp.Close();
