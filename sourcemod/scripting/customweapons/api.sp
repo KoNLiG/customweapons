@@ -145,6 +145,16 @@ any Native_SetModel(Handle plugin, int numParams)
         }
         case CustomWeaponModel_World:
         {
+            // Store the original weapon world model if needed.
+            if(!custom_weapon_data.def_world_model)
+            {
+                int weapon_world_model = GetEntPropEnt(entity, Prop_Send, "m_hWeaponWorldModel");
+                if (weapon_world_model != -1)
+                {
+                    custom_weapon_data.def_world_model_idx = GetEntProp(weapon_world_model, Prop_Send, "m_nModelIndex");
+                }
+            }
+
             custom_weapon_data.world_model = source;
 
             ReEquipWeaponEntity(entity);

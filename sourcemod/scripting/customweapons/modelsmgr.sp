@@ -73,8 +73,27 @@ Action Hook_OnWeaponEquip(int client, int weapon)
     // Try to retrieve and validate the weapon customization data.
     // If it failed, that means that there are no customizations applied on this weapon.
     CustomWeaponData custom_weapon_data;
-    if (!custom_weapon_data.GetMyself(weapon) || !custom_weapon_data.world_model[0])
+    if(!custom_weapon_data.GetMyself(weapon))
     {
+        return Plugin_Continue;
+    }
+
+    int weapon_world_model = GetEntPropEnt(weapon, Prop_Send, "m_hWeaponWorldModel");
+    if (weapon_world_model == -1)
+    {
+        return Plugin_Continue;
+    }
+
+    // Restore the weapon's world model to it's original
+    if(!custom_weapon_data.world_model[0])
+    {
+        if(custom_weapon_data.def_world_model_idx)
+        {
+            SetEntProp(weapon_world_model, Prop_Send, "m_nModelIndex", custom_weapon_data.def_world_model_idx);
+
+            custom_weapon_data.def_world_model_idx = 0;
+        }
+
         return Plugin_Continue;
     }
 
@@ -96,11 +115,7 @@ Action Hook_OnWeaponEquip(int client, int weapon)
         return Plugin_Continue;
     }
 
-    int weapon_world_model = GetEntPropEnt(weapon, Prop_Send, "m_hWeaponWorldModel");
-    if (weapon_world_model != -1)
-    {
-        SetEntProp(weapon_world_model, Prop_Send, "m_nModelIndex", precache_index);
-    }
+    SetEntProp(weapon_world_model, Prop_Send, "m_nModelIndex", precache_index);
 
     return Plugin_Continue;
 }

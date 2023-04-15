@@ -89,6 +89,10 @@ enum struct CustomWeaponData
     // relative to "sounds/*" folder.
     char shot_sound[PLATFORM_MAX_PATH];
 
+    // Default weapon world model index.
+    // Used for restoring a weapon's world model to its original.
+    int def_world_model_idx;
+
     //======================================//
 
     // Update/Remove/Get methods for convenience.
