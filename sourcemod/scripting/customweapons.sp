@@ -1,6 +1,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
+#include <cstrike>
 #include <anymap>
 #include <customweapons>
 
@@ -150,38 +151,91 @@ void ReEquipWeaponEntity(int weapon, int weapon_owner = -1)
         return;
     }
 
-    // Remove the weapon.
-    SDKHooks_DropWeapon(weapon_owner, weapon);
+    bool remove_dummy_weapon;
 
-    // Equip the weapon back in a frame.
-    DataPack dp = new DataPack();
-    dp.WriteCell(GetClientUserId(weapon_owner));
-    dp.WriteCell(EntIndexToEntRef(weapon));
-    dp.Reset();
-
-    EquipPlayerWeapon(weapon_owner, weapon);
-
-    RequestFrame(SwitchWeapon, dp);
-}
-
-void SwitchWeapon(DataPack dp)
-{
-    int client = GetClientOfUserId(dp.ReadCell());
-    int weapon = EntRefToEntIndex(dp.ReadCell());
-
-    if (client && weapon != -1)
+    int dummy_weapon = GetDummyWeapon(weapon, weapon_owner, remove_dummy_weapon);
+    if (dummy_weapon == -1)
     {
-        char classname[32];
-        GetEntityClassname(weapon, classname, sizeof(classname));
-
-        FakeClientCommand(client, "use %s", classname);
-
-        // Apparently 'use' command doesn't trigger 'WeaponEquip' event,
-        // so trigger it manually.
-        Hook_OnWeaponEquip(client, weapon);
+        return;
     }
 
+    DataPack dp = new DataPack();
+    RequestFrame(Frame_ReequipWeapon, dp);
+    dp.WriteCell(g_Players[weapon_owner].userid);
+    dp.WriteCell(EntIndexToEntRef(weapon));
+    dp.WriteCell(EntIndexToEntRef(dummy_weapon));
+    dp.WriteCell(remove_dummy_weapon);
+
+}
+
+int GetDummyWeapon(int weapon, int weapon_owner, bool &remove_dummy_weapon)
+{
+    // Firstly determine the dummy weapon slot, must be different than 'weapon' slot.
+    int dummy_weapon_slot = CS_SLOT_PRIMARY;
+    if (GetPlayerWeaponSlot(weapon_owner, dummy_weapon_slot) == weapon)
+    {
+        dummy_weapon_slot = CS_SLOT_SECONDARY;
+    }
+
+    int dummy_weapon = GetPlayerWeaponSlot(weapon_owner, dummy_weapon_slot);
+    if (dummy_weapon == -1)
+    {
+        #define DUMMY_PRIMARY_WEAPON "weapon_ak47"
+        #define DUMMY_SECONDARY_WEAPON "weapon_glock"
+
+        if ((dummy_weapon = GivePlayerItem(weapon_owner, dummy_weapon_slot == CS_SLOT_PRIMARY ? DUMMY_PRIMARY_WEAPON : DUMMY_SECONDARY_WEAPON)) == -1)
+        {
+            return -1;
+        }
+
+        EquipPlayerWeapon(weapon_owner, dummy_weapon);
+        remove_dummy_weapon = true;
+    }
+
+    return dummy_weapon;
+}
+
+void Frame_ReequipWeapon(DataPack dp)
+{
+    dp.Reset();
+
+    int userid = dp.ReadCell();
+    int weapon_entref = dp.ReadCell();
+    int dummy_weapon_entref = dp.ReadCell();
+    bool remove_dummy_weapon = dp.ReadCell();
+
     dp.Close();
+
+    int weapon_owner = GetClientOfUserId(userid);
+    if (!weapon_owner)
+    {
+        return;
+    }
+
+    int weapon = EntRefToEntIndex(weapon_entref);
+    if (weapon == -1)
+    {
+        return;
+    }
+
+    int dummy_weapon = EntRefToEntIndex(dummy_weapon_entref);
+    if (dummy_weapon == -1)
+    {
+        return;
+    }
+
+    char weapon_classname[32], dummy_weapon_classname[32];
+    GetEntityClassname(weapon, weapon_classname, sizeof(weapon_classname));
+    GetEntityClassname(dummy_weapon, dummy_weapon_classname, sizeof(dummy_weapon_classname));
+
+    FakeClientCommand(weapon_owner, "use %s", dummy_weapon_classname);
+    FakeClientCommand(weapon_owner, "use %s", weapon_classname);
+
+    if (remove_dummy_weapon)
+    {
+        RemovePlayerItem(weapon_owner, dummy_weapon);
+        RemoveEntity(dummy_weapon);
+    }
 }
 
 bool IsClientOwnWeapon(int client, int weapon)

@@ -12,6 +12,9 @@ enum struct Player
     // Our client slot index.
     int client;
 
+    // Player user id.
+    int userid;
+
     // Client 'CPredictedViewModel' entity reference.
     int view_model_reference;
 
@@ -25,6 +28,7 @@ enum struct Player
     void Init(int client)
     {
         this.client = client;
+        this.userid = GetClientUserId(client);
         this.view_model_reference = INVALID_ENT_REFERENCE;
 
         this.default_sounds_enabled = true;
